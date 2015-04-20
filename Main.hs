@@ -31,8 +31,8 @@ makeTableIsh = toListOf $ responseBody . to (decodeUtf8With lenientDecode)
 processList :: Response ByteString -> Response ByteString -> [POWResults]
 processList r1 r2 = nub res
   where
-    sr1 = sanitize $ r1
-    sr2 = sanitize $ r2
+    sr1 = sanitize r1
+    sr2 = sanitize r2
     csr1 = countSanitized sr1
     csr2 = countSanitized sr2
 
@@ -49,8 +49,8 @@ processList r1 r2 = nub res
         l' = concatMap (T.splitOn "," . T.replace "." "" . T.replace "\160" "") l
         trim' = T.unwords . T.words
       in fmap trim' l'
-    countSanitized x =
-      reverse . sort . map (head &&& length) . group . sort $ x
+    countSanitized =
+      sortBy (flip compare) . map (head &&& length) . group . sort
 
 maybeAdd :: Maybe Int -> Maybe Int -> Int
 maybeAdd (Just a) Nothing  = a
@@ -59,8 +59,8 @@ maybeAdd Nothing (Just b)  = b
 maybeAdd Nothing Nothing   = 0
 
 htmlLeaderboard :: [POWResults] -> Html ()
-htmlLeaderboard xs = do
-  table_ $ do
+htmlLeaderboard xs =
+  table_ $
     tr_ $ do
       th_ "Rank"
       th_ "Name"
@@ -75,7 +75,7 @@ htmlLeaderboard xs = do
       th_ "Year Total"
       mapM_ (\(powres, i) -> p i powres) (zip sortedXs ([1..] :: [Integer]))
   where
-    sortedXs = sortBy (\(POWResults _ b c) (POWResults _ e f) -> (maybeAdd e f) `compare` (maybeAdd b c)) xs
+    sortedXs = sortBy (\(POWResults _ b c) (POWResults _ e f) -> maybeAdd e f `compare` maybeAdd b c) xs
 
     p :: Integer -> POWResults -> Html ()
     p n (POWResults person cur prev) =
@@ -100,7 +100,7 @@ boilerplate t =
     head_ $ do
       title_ "YSU Math Problem of the Week Leaderboard"
       style_ css
-    body_ $ do
+    body_ $
       div_ [id_ "main"] $ do
         h1_ "YSU Problem of the Week Leaderboard"
         t
