@@ -7,8 +7,8 @@ import Data.ByteString.Lazy (ByteString)
 import Data.List (group, sort)
 import Data.Monoid
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as TLIO
 import Data.Text.Encoding.Error (lenientDecode)
-import qualified Data.Text.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8With)
 import Lucid
 import Network.Wreq hiding (head_)
