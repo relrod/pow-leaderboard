@@ -10,7 +10,6 @@ import qualified Data.Text as T
 import Data.Text.Encoding.Error (lenientDecode)
 import qualified Data.Text.IO as TIO
 import Data.Text.Lazy.Encoding (decodeUtf8With)
-import qualified Data.Text.Lazy.IO as TLIO
 import Lucid
 import Network.Wreq hiding (head_)
 import Text.Taggy
@@ -29,16 +28,6 @@ processList r =
       l' = concatMap (T.splitOn "," . T.replace "." "" . T.replace "\160" "") l
       splitted = fmap T.strip l'
   in reverse . sort . map (length &&& head) . group . sort $ splitted
-
-textLeaderboard :: [(Int, T.Text)] -> IO ()
-textLeaderboard l = do
-  mapM_ (\((entries, person), n) -> p entries person n) (zip l ([1..] :: [Integer]))
-  where
-    p entries person n =
-      TIO.putStrLn $ (T.pack . show $ n) <> ". " <> person <> " (" <>
-      (T.pack . show $ entries) <> " " <> pluralize entries <> ")"
-    pluralize 1 = "problem"
-    pluralize _ = "problems"
 
 htmlLeaderboard :: [(Int, T.Text)] -> Html ()
 htmlLeaderboard l = do
