@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Applicative
 import Control.Arrow
 import Control.Lens hiding (children)
+import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.List (group, nub, sort, sortBy, union)
 import Data.Monoid
@@ -10,6 +12,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as TLIO
 import Data.Text.Encoding.Error (lenientDecode)
 import Data.Text.Lazy.Encoding (decodeUtf8With)
+import Data.Time.LocalTime (getZonedTime, ZonedTime)
 import Lucid
 import Network.Wreq hiding (head_)
 import Text.Taggy
@@ -94,8 +97,8 @@ htmlLeaderboard xs =
     maybeToField (Just n) = toHtml $ show n <> " " <> pluralize n
     maybeToField Nothing = toHtml ("" :: String)
 
-boilerplate :: Html () -> Html ()
-boilerplate t =
+boilerplate :: ZonedTime -> Html () -> Html ()
+boilerplate time t =
   doctypehtml_ $ do
     head_ $ do
       title_ "YSU Math Problem of the Week Leaderboard"
@@ -104,12 +107,17 @@ boilerplate t =
       div_ [id_ "main"] $ do
         h1_ "YSU Problem of the Week Leaderboard"
         t
-        p_ $
-          small_ $
-            a_ [href_ "https://github.com/relrod/pow-leaderboard"] "code source"
-        p_ $
-          small_ $
-            a_ [href_ "https://elrod.me"] "ⓒ 2015 Ricky Elrod"
+        p_ [style_ "float: left;"] $
+          small_ $ do
+            "ⓒ 2015 "
+            a_ [href_ "https://elrod.me"] "Ricky Elrod"
+            " ("
+            a_ [href_ "https://github.com/relrod/pow-leaderboard"] "code"
+            ")"
+        p_ [style_ "float: right"] $
+          small_ $ do
+            "Up to date as of "
+            toHtml . show $ time
   where
     css = "* { font-family: sans-serif; }\
           \html, body { margin: 0; padding: 0; }\
@@ -121,4 +129,5 @@ main :: IO ()
 main = do
   current <- get "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2015_spring.html"
   previous <- get "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2014_fall.html"
-  TLIO.putStrLn . renderText . boilerplate . htmlLeaderboard . processList current $ previous
+  time <- getZonedTime
+  TLIO.putStrLn . renderText . boilerplate time . htmlLeaderboard . processList current $ previous
