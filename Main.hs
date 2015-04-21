@@ -1,10 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Control.Applicative
 import Control.Arrow
 import Control.Lens hiding (children)
-import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.List (group, nub, sort, sortBy, union)
 import Data.Monoid
