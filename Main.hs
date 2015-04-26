@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Applicative
 import Control.Arrow
-import Control.Lens hiding (children)
+import Control.Lens hiding (children, elements)
 import Data.ByteString.Lazy (ByteString)
 import Data.List (group, nub, sort, sortBy, union)
+import Data.Maybe
 import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as TLIO
@@ -22,18 +24,23 @@ data POWResults = POWResults {
   , previousTotal :: Maybe Int
   } deriving (Eq, Ord, Show)
 
-table :: [Node] -> Maybe T.Text
-table row =  row ^? ix 1 . contents
+data POWProblem = POWProblem {
+    powNumber :: T.Text
+  , powSolvers :: Int
+  } deriving (Eq, Ord, Show)
 
-makeTableIsh :: Response ByteString -> [Maybe T.Text]
+table :: [Node] -> (Maybe T.Text, Maybe T.Text)
+table row =  (row ^? ix 0 . elements . contents, row ^? ix 1 . contents)
+
+makeTableIsh :: Response ByteString -> [(Maybe T.Text, Maybe T.Text)]
 makeTableIsh = toListOf $ responseBody . to (decodeUtf8With lenientDecode)
                . html . allNamed (only "tr") . children . to table
 
-processList :: Response ByteString -> Response ByteString -> [POWResults]
-processList r1 r2 = nub res
+processList :: Response ByteString -> Response ByteString -> ([POWResults], [Maybe POWProblem])
+processList r1 r2 = (nub res, popularity (p1 ++ p2))
   where
-    sr1 = sanitize r1
-    sr2 = sanitize r2
+    (sr1, p1) = sanitize r1
+    (sr2, p2) = sanitize r2
     csr1 = countSanitized sr1
     csr2 = countSanitized sr2
 
@@ -44,12 +51,19 @@ processList r1 r2 = nub res
     -- Now, for each name, get a count of current and previous POWs
     res = fmap (\n -> POWResults n (lookup n csr1) (lookup n csr2)) allNames
 
+    popularity :: [(Maybe T.Text, [T.Text])] -> [Maybe POWProblem]
+    popularity = map (\(pNum, pWinners) -> case pNum of
+                                            Nothing -> Nothing
+                                            Just pNum' -> Just $ POWProblem pNum' (length pWinners))
+
     sanitize r =
       let
-        l = [ x | Just x <- makeTableIsh r, x /= "\160" ]
-        l' = concatMap (T.splitOn "," . T.replace "." "" . T.replace "\160" "") l
-        trim' = T.unwords . T.words
-      in fmap trim' l'
+        l = [ (head . tail . T.words <$> pNum, x)
+            | (pNum, Just x) <- makeTableIsh r, x /= "\160" ]
+        l' = map (\(x, y) ->
+                   (x, map (T.unwords . T.words)
+                       (T.splitOn "," . T.replace "." "" . T.replace "\160" "" $ y))) l
+      in (concatMap snd l', l')
     countSanitized =
       sortBy (flip compare) . map (head &&& length) . group . sort
 
@@ -59,8 +73,8 @@ maybeAdd (Just a) (Just b) = a + b
 maybeAdd Nothing (Just b)  = b
 maybeAdd Nothing Nothing   = 0
 
-htmlLeaderboard :: [POWResults] -> Html ()
-htmlLeaderboard xs =
+htmlLeaderboard :: ([POWResults], [Maybe POWProblem]) -> Html ()
+htmlLeaderboard (xs, ps) = do
   table_ $
     tr_ $ do
       th_ "Rank"
@@ -75,8 +89,17 @@ htmlLeaderboard xs =
         "This semester"
       th_ "Year Total"
       mapM_ (\(powres, i) -> p i powres) (zip sortedXs ([1..] :: [Integer]))
+
+  h1_ "Problems of the Week by Popularity"
+  table_ $
+    tr_ $ do
+      th_ "Rank"
+      th_ "Problem #"
+      th_ "Solvers"
+      mapM_ (\(pow, i) -> pPopularity i pow) (zip sortedWinners ([1..] :: [Integer]))
   where
     sortedXs = sortBy (\(POWResults _ b c) (POWResults _ e f) -> maybeAdd e f `compare` maybeAdd b c) xs
+    sortedWinners = sortBy (\(POWProblem _ a) (POWProblem _ b) -> b `compare` a) (catMaybes ps)
 
     p :: Integer -> POWResults -> Html ()
     p n (POWResults person cur prev) =
@@ -87,6 +110,13 @@ htmlLeaderboard xs =
         td_ $ maybeToField cur
         td_ $ toHtml $ show ma <> " " <> pluralize ma
           where ma = maybeAdd cur prev
+
+    pPopularity :: Integer -> POWProblem -> Html ()
+    pPopularity n (POWProblem pNum pWinners) =
+      tr_ $ do
+        td_ (toHtml . show $ n)
+        td_ (toHtml pNum)
+        td_ (toHtml . show $ pWinners)
 
     pluralize 1 = "problem"
     pluralize _ = "problems"
