@@ -16,6 +16,10 @@ import Network.Wreq hiding (head_)
 import Text.Taggy
 import Text.Taggy.Lens
 
+lastSemester, thisSemester :: String
+lastSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2015_spring.html"
+thisSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2015-16/index_winners_2015_fall.html"
+
 data POWResults = POWResults {
     name :: T.Text
   , currentTotal :: Maybe Int
@@ -67,11 +71,11 @@ htmlLeaderboard xs =
       th_ "Name"
       th_ $
         a_
-        [href_ "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2014_fall.html"]
+        [href_ (T.pack lastSemester)]
         "Last semester"
       th_ $
         a_
-        [href_ "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2015_spring.html"]
+        [href_ (T.pack thisSemester)]
         "This semester"
       th_ "Year Total"
       mapM_ (\(powres, i) -> p i powres) (zip sortedXs ([1..] :: [Integer]))
@@ -125,7 +129,7 @@ boilerplate time t =
 
 main :: IO ()
 main = do
-  current <- get "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2015_spring.html"
-  previous <- get "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2014_fall.html"
+  current <- get thisSemester
+  previous <- get lastSemester
   time <- getZonedTime
   TLIO.putStrLn . renderText . boilerplate time . htmlLeaderboard . processList current $ previous
