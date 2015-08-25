@@ -5,6 +5,7 @@ import Control.Arrow
 import Control.Lens hiding (children)
 import Data.ByteString.Lazy (ByteString)
 import Data.List (group, nub, sort, sortBy, union)
+import Data.Maybe (fromMaybe)
 import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as TLIO
@@ -58,10 +59,7 @@ processList r1 r2 = nub res
       sortBy (flip compare) . map (head &&& length) . group . sort
 
 maybeAdd :: Maybe Int -> Maybe Int -> Int
-maybeAdd (Just a) Nothing  = a
-maybeAdd (Just a) (Just b) = a + b
-maybeAdd Nothing (Just b)  = b
-maybeAdd Nothing Nothing   = 0
+maybeAdd a b = fromMaybe 0 a + fromMaybe 0 b
 
 htmlLeaderboard :: [POWResults] -> Html ()
 htmlLeaderboard xs =
