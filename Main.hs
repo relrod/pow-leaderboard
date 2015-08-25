@@ -20,6 +20,8 @@ import Text.Taggy.Lens
 lastSemester, thisSemester :: String
 lastSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2015_spring.html"
 thisSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2015-16/index_winners_2015_fall.html"
+{-# INLINE lastSemester #-}
+{-# INLINE thisSemester #-}
 
 data POWResults = POWResults {
     name :: T.Text
@@ -29,10 +31,12 @@ data POWResults = POWResults {
 
 table :: [Node] -> Maybe T.Text
 table row =  row ^? ix 1 . contents
+{-# INLINE table #-}
 
 makeTableIsh :: Response ByteString -> [Maybe T.Text]
 makeTableIsh = toListOf $ responseBody . to (decodeUtf8With lenientDecode)
                . html . allNamed (only "tr") . children . to table
+{-# INLINE makeTableIsh #-}
 
 processList :: Response ByteString -> Response ByteString -> [POWResults]
 processList r1 r2 = nub res
@@ -60,6 +64,7 @@ processList r1 r2 = nub res
 
 maybeAdd :: Maybe Int -> Maybe Int -> Int
 maybeAdd a b = fromMaybe 0 a + fromMaybe 0 b
+{-# INLINE maybeAdd #-}
 
 htmlLeaderboard :: [POWResults] -> Html ()
 htmlLeaderboard xs =
