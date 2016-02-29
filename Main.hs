@@ -18,8 +18,8 @@ import Text.Taggy
 import Text.Taggy.Lens
 
 lastSemester, thisSemester :: String
-lastSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2014-15/index_winners_2015_spring.html"
-thisSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2015-16/index_winners_2015_fall.html"
+lastSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2015-16/index_winners_2015_fall.html"
+thisSemester = "http://www.as.ysu.edu/~curmath/pow/pow_web_2015-16/index_winners_2016_spring.html"
 {-# INLINE lastSemester #-}
 {-# INLINE thisSemester #-}
 
