@@ -57,8 +57,9 @@ processList r1 r2 = nub res
       let
         l = [ x | Just x <- makeTableIsh r, x /= "\160" ]
         l' = concatMap (T.splitOn "," . T.replace "." "" . T.replace "\160" "") l
+        l'' = concatMap (T.splitOn " and ") l'
         trim' = T.unwords . T.words
-      in fmap trim' l'
+      in fmap trim' l''
     countSanitized =
       sortBy (flip compare) . map (head &&& length) . group . sort
 
