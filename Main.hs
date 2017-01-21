@@ -48,7 +48,7 @@ processList r1 r2 = nub res
 
     -- There has GOT to be a better way to logic this. But, here goes.
     -- First, let's get a list of all possible names.
-    allNames = sr1 `union` sr2
+    allNames = filter notBlank (sr1 `union` sr2)
 
     -- Now, for each name, get a count of current and previous POWs
     res = fmap (\n -> POWResults n (lookup n csr1) (lookup n csr2)) allNames
@@ -62,6 +62,8 @@ processList r1 r2 = nub res
       in fmap trim' l''
     countSanitized =
       sortBy (flip compare) . map (head &&& length) . group . sort
+
+    notBlank s = s /= "&nbsp;" && s /= "" && s /= "\t" && s /= " "
 
 maybeAdd :: Maybe Int -> Maybe Int -> Int
 maybeAdd a b = fromMaybe 0 a + fromMaybe 0 b
@@ -115,7 +117,7 @@ boilerplate time t =
         t
         p_ [style_ "float: left;"] $
           small_ $ do
-            "ⓒ 2015 "
+            "ⓒ 2017 "
             a_ [href_ "https://elrod.me"] "Ricky Elrod"
             " ("
             a_ [href_ "https://github.com/relrod/pow-leaderboard"] "code"
